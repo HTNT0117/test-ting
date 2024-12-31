@@ -1,12 +1,9 @@
-"use client"
+"use client";
 
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-// * Import CSS file, you can use CSS module if you want
-// ! Change your CSS inside this file
-import './page.css'
-
-interface Kols {
+interface Kol {
 	KolID: number;
 	UserProfileID: number;
 	Language: string;
@@ -35,23 +32,95 @@ interface Kols {
 	PortraitLeftURL: string;
 	LivenessStatus: boolean;
 }
+  
+interface ApiResponse {
+  result: string;
+  errorMessage: string;
+  pageIndex: number;
+  pageSize: number;
+  guid: string;
+  totalCount: number;
+  KolInformation: Kol[];
+}
 
 const Page = () => {
-    // * Use useState to store Kols from API 
-    // ! (if you have more optimized way to store data, PLEASE FEELS FREE TO CHANGE)
-	const [Kols , setKols] = useState<Kols[]>([]);  
+  const [kols, setKols] = useState<Kol[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-    // * Fetch API over here 
-    // * Use useEffect to fetch data from API 
-    useEffect(() => {
+  useEffect(() => {
+    const fetchKols = async () => {
+      try {
+        const response = await axios.get<ApiResponse>("http://localhost:8081/kols", {
+          params: { pageIndex: 1, pageSize: 29 },
+        });
 
-    }, []);
+        if (response.data.result === "Success") {
+          setKols(response.data.KolInformation);
+        } else {
+          setError(response.data.errorMessage || "Failed to fetch KOL data");
+        }
+      } catch (err) {
+        setError("Error fetching KOL data: " + (err as Error).message);
+      }
+    };
 
-    return (
-        <>
-            <h1 className='header'>Implement component over here</h1>
-        </>
-    )
+    fetchKols();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="w-full max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="p-4 border-b bg-purple-600 flex items-center justify-between">
+          <h2 className="text-white text-2xl font-semibold">KOL List</h2>
+        </div>
+        {error ? (
+          <div className="p-4 text-red-500">{error}</div>
+        ) : (
+          <div
+            id="kol-table-container"
+            className="overflow-y-auto"
+            style={{ maxHeight: "90vh" }}
+          >
+            <table className="min-w-full table-auto text-left">
+              <thead>
+                <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                  {Object.keys(kols[0] || {}).map((key) => (
+                    <th key={key} className="py-3 px-6">
+                      {key}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 text-sm font-light">
+                {kols.map((kol) => (
+                  <tr
+                    key={kol.KolID}
+                    className="border-b border-gray-200 hover:bg-gray-100"
+                  >
+                    {Object.entries(kol).map(([key, value]) => (
+                      <td key={key} className="py-3 px-6 whitespace-nowrap">
+                        {key.toLowerCase().includes("url") ? (
+                          <img
+                            src={value as string}
+                            alt={key}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                        ) : typeof value === "boolean" ? (
+                          value ? "Yes" : "No"
+                        ) : (
+                          value
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
-export default Page;
+export default Page; 

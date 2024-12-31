@@ -1,4 +1,6 @@
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* 
     This is the CSS file for the page component. 
     It contains the styles for the header of the page.
